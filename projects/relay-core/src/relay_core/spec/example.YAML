@@ -1,0 +1,34 @@
+version: 1
+name: my_text_processing_pipeline
+description: A pipeline to load, process, and deploy text transcripts.
+steps:
+  - id: load_transcript
+    type: ingest
+    uses: relay.ext.load_text
+    config:
+      directory: s3://my-bucket/raw/transcripts/
+
+  - id: check_consent
+    type: check
+    uses: relay.ext.check_consent
+    inputs:
+      data: load_transcript.result
+    config:
+      required: true
+
+  - id: process_transcript
+    type: transform
+    uses: relay.ext.process_text
+    inputs:
+      data: load_transcript.result
+    config:
+      redact_sensitive: true
+      normalize_format: true
+
+  - id: deploy_transcript
+    type: export
+    uses: relay.ext.deploy
+    inputs:
+      data: process_transcript.result
+    config:
+      directory: s3://my-bucket/exports/transcripts/
